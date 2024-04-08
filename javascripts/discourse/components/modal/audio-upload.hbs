@@ -1,0 +1,53 @@
+<DModal
+  @closeModal={{@closeModal}}
+  class="composer-audio-upload-modal"
+  @dismissable={{false}}
+  @title={{theme-i18n "composer_audio_upload.title"}}
+  @flash={{this.flash}}
+  @flashType={{this.flashType}}
+>
+  <:body>
+    <div class="composer-audio-upload-buttons">
+      <DButton
+        @action={{this.startStopRecording}}
+        @icon={{if this.isRecording "stop-circle" "circle"}}
+        @translatedLabel={{if
+          this.isRecording
+          "Stop recording"
+          "Start recording"
+        }}
+        class="btn record-button
+          {{if this.isRecording 'btn-danger' 'btn-secondary'}}"
+        disabled={{this.disallowRecord}}
+      />
+    </div>
+    <div class="composer-audio-upload-audio">
+      {{#if this.isProcessing}}
+        <span class="wait-text">Processing audio data, please wait...</span>
+      {{else if this.isRecordingStart}}
+        <span class="wait-text">Initializing audio recording...</span>
+      {{else if this.isRecording}}
+        Recording in progress, speak now :-)
+      {{else if this.hasRecording}}
+        {{this._audioEl}}
+      {{else}}
+        Nothing has been recorded yet
+      {{/if}}
+    </div>
+    <div class="composer-audio-upload-metadata">
+      {{#if this.hasRecording}}
+        <span>Size: {{this.recordingSize}}</span>
+      {{/if}}
+    </div>
+  </:body>
+  <:footer>
+    <DButton
+      @action={{this.uploadFile}}
+      class="btn-primary"
+      @icon={{this.uploadIcon}}
+      @translatedLabel="upload"
+      @disabled={{this.disallowUpload}}
+    />
+    <DButton @label="cancel" @class="btn-flat" @action={{@closeModal}} />
+  </:footer>
+</DModal>

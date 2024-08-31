@@ -56,11 +56,20 @@
   <:footer>
     <DButton
       @action={{this.uploadFile}}
-      class="btn-primary"
+      class="btn-primary upload"
       @icon={{this.uploadIcon}}
       @label="upload"
       @disabled={{this.disallowUpload}}
     />
+    {{#if this.chatContext}}
+      <DButton
+        @action={{this.uploadFileAndSend}}
+        class="btn-primary send"
+        @icon="paper-plane"
+        @translatedLabel={{theme-i18n "composer_audio.button.upload_and_send"}}
+        @disabled={{this.disallowUpload}}
+      />
+    {{/if}}
     <DButton @label="cancel" @class="btn-flat" @action={{@closeModal}} />
   </:footer>
 </DModal>

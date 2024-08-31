@@ -2,6 +2,7 @@ import { tracked } from "@glimmer/tracking";
 import Component from "@ember/component";
 import { action } from "@ember/object";
 import { equal, notEmpty } from "@ember/object/computed";
+import { getOwner } from "@ember/owner";
 import loadScript from "discourse/lib/load-script";
 import { uploadIcon } from "discourse/lib/uploads";
 import I18n from "discourse-i18n";
@@ -57,6 +58,10 @@ export default class AudioUpload extends Component {
     return uploadIcon(this.currentUser.staff, this.siteSettings);
   }
 
+  get chatContext() {
+    return this.model?.context === "channel";
+  }
+
   _clearRecording() {
     this._recorder = null;
     this._audioData = null;
@@ -107,16 +112,45 @@ export default class AudioUpload extends Component {
 
   onError(error) {
     this.flash = I18n.t(themePrefix("composer_audio.error.failed"));
+    // eslint-disable-next-line no-console
     console.error(error);
   }
 
   @action
-  uploadFile() {
+  uploadFileAndSend() {
+    this.uploadFile({ send: true });
+  }
+
+  @action
+  async uploadFile(options = {}) {
     if (!this._audioData) {
       this.flash = I18n.t(themePrefix("composer_audio.error.no_record"));
       return;
     }
-    this.appEvents.trigger(`composer:add-files`, [this._audioData]);
+
+    if (this.chatContext) {
+      const chatComposerUploads = getOwner(this).lookup(
+        "component:chat-composer-uploads"
+      );
+
+      this.appEvents.trigger(
+        `upload-mixin:${chatComposerUploads.id}:add-files`,
+        [this._audioData]
+      );
+
+      if (options.send) {
+        this.appEvents.one(
+          `upload-mixin:${chatComposerUploads.id}:all-uploads-complete`,
+          async () => {
+            await this.model.args.onSendMessage(this.model.draft);
+            this.model.composer.textarea.refreshHeight();
+          }
+        );
+      }
+    } else {
+      this.appEvents.trigger(`composer:add-files`, [this._audioData]);
+    }
+
     this.closeModal();
   }
 

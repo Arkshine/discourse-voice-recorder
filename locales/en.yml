@@ -5,6 +5,8 @@ en:
     button_text: "Record & upload audio"
     title: "Record & upload audio"
   composer_audio:
+    button:
+      upload_and_send: "Send"
     action:
       start_recording: "Start recording"
       stop_recording: "Stop recording"

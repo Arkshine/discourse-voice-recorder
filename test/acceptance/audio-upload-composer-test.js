@@ -14,7 +14,7 @@ import {
 } from "discourse/tests/helpers/qunit-helpers";
 import I18n from "discourse-i18n";
 
-const uploadResponseData = {
+const uploadResponseFixtures = {
   id: 321,
   url: "/uploads/default/original/1X/61fdf6fac415541560e2d86e495f94d4dd201a18.mp3",
   original_filename: "recording.mp3",
@@ -32,11 +32,53 @@ const uploadResponseData = {
   thumbnail: null,
 };
 
+const channelResponseFixtures = {
+  public_channels: [
+    {
+      id: 4,
+      chatable: {
+        id: 4,
+        name: "General",
+        color: "25AAE2",
+        slug: "general",
+        slug_path: ["general"],
+      },
+      chatable_id: 4,
+      chatable_type: "Category",
+      chatable_url: "/c/general/4",
+      title: "test",
+      slug: "test",
+      status: "open",
+      memberships_count: 1,
+      current_user_membership: {
+        following: true,
+        muted: false,
+        chat_channel_id: 4,
+      },
+      meta: {
+        message_bus_last_ids: {
+          channel_message_bus_last_id: 0,
+        },
+      },
+    },
+  ],
+  direct_message_channels: [],
+  tracking: {
+    channel_tracking: {},
+    thread_tracking: {},
+  },
+  meta: {
+    message_bus_last_ids: {},
+  },
+  unread_thread_overview: {},
+  global_presence_channel_state: {},
+};
+
 acceptance("Audio Upload - Composer", function (needs) {
   needs.user();
   needs.settings({ authorized_extensions: "mp3" });
   needs.pretender((server, helper) => {
-    server.post("/uploads.json", () => helper.response(uploadResponseData));
+    server.post("/uploads.json", () => helper.response(uploadResponseFixtures));
   });
 
   test("recording audio", async function (assert) {
@@ -160,8 +202,8 @@ acceptance("Audio Upload - Composer", function (needs) {
     assert
       .dom(".d-editor-input")
       .hasValue(
-        `![${uploadResponseData.original_filename.split(".")[0]}|audio](${
-          uploadResponseData.short_url
+        `![${uploadResponseFixtures.original_filename.split(".")[0]}|audio](${
+          uploadResponseFixtures.short_url
         })\n`,
         "composer upload: markdown is correct"
       );
@@ -170,5 +212,131 @@ acceptance("Audio Upload - Composer", function (needs) {
     assert
       .dom(".d-editor-preview audio")
       .exists("composer preview: audio is present");
+  });
+});
+
+acceptance("Audio Upload - Chat", function (needs) {
+  needs.user({ has_chat_enabled: true, can_chat: true });
+  needs.settings({ authorized_extensions: "mp3", chat_enabled: true });
+  needs.pretender((server, helper) => {
+    server.post("/uploads.json", () => helper.response(uploadResponseFixtures));
+    server.get("/chat/api/me/channels", () =>
+      helper.response(channelResponseFixtures)
+    );
+    server.post("/chat/:channel_id", () => helper.response());
+    server.post("/chat/api/channels/:channel_id/memberships/me", () =>
+      helper.response({})
+    );
+    server.post("/chat/api/channels/:channel_id/drafts", () =>
+      helper.response({})
+    );
+    server.get("/chat/api/channels/:channel_id/messages", () =>
+      helper.response({
+        messages: [],
+        meta: {
+          target_message_id: null,
+          can_load_more_future: false,
+          can_load_more_past: false,
+        },
+        tracking: {},
+      })
+    );
+  });
+
+  let originalResizeObserver;
+
+  // Dirty fix for "global failure: Error: ResizeObserver loop completed with undelivered notifications."
+  needs.hooks.beforeEach(function () {
+    originalResizeObserver = window.ResizeObserver;
+    window.ResizeObserver = function () {
+      this.observe = function () {};
+      this.disconnect = function () {};
+    };
+  });
+
+  needs.hooks.afterEach(function () {
+    window.ResizeObserver = originalResizeObserver;
+  });
+
+  test("recording audio & upload", async function (assert) {
+    await visit("/chat/c/general/4");
+
+    assert
+      .dom(".chat-composer-button.-voice-recorder")
+      .exists("it adds a button to the composer");
+    await click(".chat-composer-button.-voice-recorder");
+
+    assert.dom(".d-modal").isVisible("it pops up a modal");
+
+    await click(".d-modal .record-button"); // start recording
+
+    await waitUntil(
+      () => {
+        return find(
+          ".d-modal .composer-audio-upload-audio"
+        ).textContent.includes(
+          I18n.t(themePrefix("composer_audio.state.recording"))
+        );
+      },
+      { timeout: 5000 }
+    );
+
+    await click(".d-modal .record-button"); // stop recording
+    await waitFor(".d-modal .composer-audio-upload-audio audio");
+
+    await click(".d-modal__footer button.upload");
+    assert.dom(".d-modal").isNotVisible("modal is closed");
+    assert.dom(".chat-composer-uploads-container").exists("audio is attached");
+
+    await waitUntil(
+      () => find(".chat-composer-button.-send").disabled === false,
+      { timeout: 5000 }
+    );
+
+    await click(".chat-composer-button.-send");
+    assert.dom(".chat-uploads audio").exists("audio is posted");
+  });
+
+  test("recording audio & send", async function (assert) {
+    await visit("/chat/c/general/4");
+
+    assert
+      .dom(".chat-composer-button.-voice-recorder")
+      .exists("it adds a button to the composer");
+    await click(".chat-composer-button.-voice-recorder");
+
+    assert.dom(".d-modal").isVisible("it pops up a modal");
+    assert
+      .dom(".d-modal__footer button .d-icon-paper-plane")
+      .exists("send button is present");
+
+    await click(".d-modal .record-button"); // start recording
+    await waitUntil(
+      () => {
+        return find(
+          ".d-modal .composer-audio-upload-audio"
+        ).textContent.includes(
+          I18n.t(themePrefix("composer_audio.state.recording"))
+        );
+      },
+      { timeout: 5000 }
+    );
+    await settled();
+
+    await click(".d-modal .record-button"); // stop recording
+    await waitFor(".d-modal .composer-audio-upload-audio audio");
+
+    await click(".d-modal__footer button.send");
+    assert.dom(".d-modal").isNotVisible("modal is closed");
+
+    await waitUntil(
+      () => {
+        return query(".chat-uploads audio");
+      },
+      { timeout: 5000 }
+    );
+    await settled();
+
+    assert.dom(".chat-uploads audio").exists("audio is posted");
   });
 });

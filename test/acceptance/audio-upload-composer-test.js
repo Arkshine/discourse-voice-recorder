@@ -264,7 +264,6 @@ acceptance("Audio Upload - Chat", function (needs) {
       .dom(".chat-composer-button.-voice-recorder")
       .exists("it adds a button to the composer");
 
-    await settled();
     await click(".chat-composer-button.-voice-recorder");
 
     assert.dom(".d-modal").isVisible("it pops up a modal");

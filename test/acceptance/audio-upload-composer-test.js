@@ -13,7 +13,7 @@ import {
   query,
   visible,
 } from "discourse/tests/helpers/qunit-helpers";
-import I18n from "discourse-i18n";
+import { i18n } from "discourse-i18n";
 
 const uploadResponseFixtures = {
   id: 321,
@@ -103,13 +103,13 @@ acceptance("Audio Upload - Composer", function (needs) {
     assert
       .dom(".d-modal .record-button .d-button-label")
       .hasText(
-        I18n.t(themePrefix("composer_audio.action.start_recording")),
+        i18n(themePrefix("composer_audio.action.start_recording")),
         "default button text is correct"
       );
     assert
       .dom(".d-modal .composer-audio-upload-audio")
       .hasText(
-        I18n.t(themePrefix("composer_audio.state.no_recording")),
+        i18n(themePrefix("composer_audio.state.no_recording")),
         "default description text is correct"
       );
 
@@ -119,7 +119,7 @@ acceptance("Audio Upload - Composer", function (needs) {
     assert
       .dom(".d-modal #modal-alert")
       .hasText(
-        I18n.t(themePrefix("composer_audio.error.no_record")),
+        i18n(themePrefix("composer_audio.error.no_record")),
         "uploading without recording shows an error"
       );
 
@@ -135,13 +135,13 @@ acceptance("Audio Upload - Composer", function (needs) {
     assert
       .dom(".d-modal .record-button .d-button-label")
       .hasText(
-        I18n.t(themePrefix("composer_audio.action.start_recording")),
+        i18n(themePrefix("composer_audio.action.start_recording")),
         "recording [initial]: button text is correct"
       );
     assert
       .dom(".d-modal .composer-audio-upload-audio")
       .hasText(
-        I18n.t(themePrefix("composer_audio.state.recording_start")),
+        i18n(themePrefix("composer_audio.state.recording_start")),
         "recording [initial]: description is correct"
       );
 
@@ -155,7 +155,7 @@ acceptance("Audio Upload - Composer", function (needs) {
         return find(
           ".d-modal .composer-audio-upload-audio"
         ).textContent.includes(
-          I18n.t(themePrefix("composer_audio.state.recording"))
+          i18n(themePrefix("composer_audio.state.recording"))
         );
       },
       { timeout: 5000 }
@@ -165,14 +165,14 @@ acceptance("Audio Upload - Composer", function (needs) {
     assert
       .dom(".d-modal .record-button .d-button-label")
       .hasText(
-        I18n.t(themePrefix("composer_audio.action.stop_recording")),
+        i18n(themePrefix("composer_audio.action.stop_recording")),
         "recording: button text is correct"
       );
 
     assert
       .dom(".d-modal .composer-audio-upload-audio")
       .hasText(
-        I18n.t(themePrefix("composer_audio.state.recording")),
+        i18n(themePrefix("composer_audio.state.recording")),
         "recording: description is correct"
       );
 
@@ -186,7 +186,7 @@ acceptance("Audio Upload - Composer", function (needs) {
     assert
       .dom(".d-modal .record-button .d-button-label")
       .hasText(
-        I18n.t(themePrefix("composer_audio.action.start_recording")),
+        i18n(themePrefix("composer_audio.action.start_recording")),
         "stopped recording: button text is correct"
       );
     assert
@@ -276,7 +276,7 @@ acceptance("Audio Upload - Chat", function (needs) {
         return find(
           ".d-modal .composer-audio-upload-audio"
         ).textContent.includes(
-          I18n.t(themePrefix("composer_audio.state.recording"))
+          i18n(themePrefix("composer_audio.state.recording"))
         );
       },
       { timeout: 5000 }
@@ -317,7 +317,7 @@ acceptance("Audio Upload - Chat", function (needs) {
         return find(
           ".d-modal .composer-audio-upload-audio"
         ).textContent.includes(
-          I18n.t(themePrefix("composer_audio.state.recording"))
+          i18n(themePrefix("composer_audio.state.recording"))
         );
       },
       { timeout: 5000 }

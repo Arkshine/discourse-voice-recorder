@@ -2,10 +2,14 @@ import { tracked } from "@glimmer/tracking";
 import Component from "@ember/component";
 import { action } from "@ember/object";
 import { equal, notEmpty } from "@ember/object/computed";
-import { getOwner } from "@ember/owner";
+import didInsert from "@ember/render-modifiers/modifiers/did-insert";
+import willDestroy from "@ember/render-modifiers/modifiers/will-destroy";
+import { htmlSafe } from "@ember/template";
+import DButton from "discourse/components/d-button";
+import DModal from "discourse/components/d-modal";
 import loadScript from "discourse/lib/load-script";
 import { uploadIcon } from "discourse/lib/uploads";
-import I18n from "discourse-i18n";
+import { i18n } from "discourse-i18n";
 
 export default class AudioUpload extends Component {
   @tracked state = "loading"; // 'loading', 'idle', 'recording', 'recording_start', 'playing', 'processing'
@@ -111,7 +115,7 @@ export default class AudioUpload extends Component {
   }
 
   onError(error) {
-    this.flash = I18n.t(themePrefix("composer_audio.error.failed"));
+    this.flash = i18n(themePrefix("composer_audio.error.failed"));
     // eslint-disable-next-line no-console
     console.error(error);
   }
@@ -124,7 +128,7 @@ export default class AudioUpload extends Component {
   @action
   async uploadFile(options = {}) {
     if (!this._audioData) {
-      this.flash = I18n.t(themePrefix("composer_audio.error.no_record"));
+      this.flash = i18n(themePrefix("composer_audio.error.no_record"));
       return;
     }
 
@@ -183,4 +187,91 @@ export default class AudioUpload extends Component {
       this._recorder.stop();
     }
   }
+
+  <template>
+    <DModal
+      class="composer-audio-upload-modal"
+      @closeModal={{@closeModal}}
+      @title={{i18n (themePrefix "composer_audio_upload.title")}}
+      @dismissable={{false}}
+      @flash={{this.flash}}
+      {{didInsert this.onShow}}
+      {{willDestroy this.onCancelRecording}}
+    >
+      <:body>
+        <div class="composer-audio-upload-buttons">
+          <DButton
+            @action={{this.startStopRecording}}
+            @icon={{if this.isRecording "stop-circle" "circle"}}
+            @translatedLabel={{i18n
+              (themePrefix
+                (if
+                  this.isRecording
+                  "composer_audio.action.stop_recording"
+                  "composer_audio.action.start_recording"
+                )
+              )
+            }}
+            class="btn record-button
+              {{if this.isRecording 'btn-danger' 'btn-secondary'}}"
+            disabled={{this.disallowRecord}}
+          />
+        </div>
+        <div class="composer-audio-upload-audio">
+          {{#if this.isLoading}}
+            <span class="wait-text">{{~htmlSafe
+                (i18n (themePrefix "composer_audio.state.loading"))
+              ~}}</span>
+          {{else if this.isProcessing}}
+            <span class="wait-text">{{~htmlSafe
+                (i18n (themePrefix "composer_audio.state.processing"))
+              ~}}</span>
+          {{else if this.isRecordingStart}}
+            <span class="wait-text">{{~htmlSafe
+                (i18n (themePrefix "composer_audio.state.recording_start"))
+              ~}}</span>
+          {{else if this.isRecording}}
+            {{~htmlSafe (i18n (themePrefix "composer_audio.state.recording"))~}}
+          {{else if this.hasRecording}}
+            {{this._audioEl}}
+          {{else}}
+            {{~htmlSafe
+              (i18n (themePrefix "composer_audio.state.no_recording"))
+            ~}}
+          {{/if}}
+        </div>
+        <div class="composer-audio-upload-metadata">
+          {{#if this.hasRecording}}
+            <span>{{~htmlSafe
+                (i18n
+                  (themePrefix "composer_audio.metadata.size")
+                  size=this.recordingSize
+                )
+              ~}}</span>
+          {{/if}}
+        </div>
+      </:body>
+      <:footer>
+        <DButton
+          @action={{this.uploadFile}}
+          class="btn-primary upload"
+          @icon={{this.uploadIcon}}
+          @label="upload"
+          @disabled={{this.disallowUpload}}
+        />
+        {{#if this.chatContext}}
+          <DButton
+            @action={{this.uploadFileAndSend}}
+            class="btn-primary send"
+            @icon="paper-plane"
+            @translatedLabel={{i18n
+              (themePrefix "composer_audio.button.upload_and_send")
+            }}
+            @disabled={{this.disallowUpload}}
+          />
+        {{/if}}
+        <DButton @label="cancel" class="btn-flat" @action={{@closeModal}} />
+      </:footer>
+    </DModal>
+  </template>
 }

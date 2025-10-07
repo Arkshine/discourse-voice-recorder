@@ -129,18 +129,13 @@ export default class AudioUpload extends Component {
     }
 
     if (this.chatContext) {
-      const chatComposerUploads = getOwner(this).lookup(
-        "component:chat-composer-uploads"
-      );
-
-      this.appEvents.trigger(
-        `upload-mixin:${chatComposerUploads.id}:add-files`,
-        [this._audioData]
-      );
+      this.appEvents.trigger(`upload-mixin:chat-composer-uploader:add-files`, [
+        this._audioData,
+      ]);
 
       if (options.send) {
         this.appEvents.one(
-          `upload-mixin:${chatComposerUploads.id}:all-uploads-complete`,
+          `upload-mixin:chat-composer-uploader:all-uploads-complete`,
           async () => {
             await this.model.args.onSendMessage(this.model.draft);
             this.model.composer.textarea.refreshHeight();

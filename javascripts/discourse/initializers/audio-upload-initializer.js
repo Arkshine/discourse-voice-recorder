@@ -1,3 +1,4 @@
+import { getOwner } from "@ember/application";
 import { withPluginApi } from "discourse/lib/plugin-api";
 import AudioUpload from "../components/modal/audio-upload";
 
@@ -15,7 +16,7 @@ function initializePlugin(api) {
   const siteSettings = api.container.lookup("service:site-settings");
 
   if (siteSettings.chat_enabled) {
-    api.registerChatComposerButton({
+    api.registerChatComposerButton?.({
       id: "voice-recorder",
       icon: "microphone",
       title: themePrefix("composer.composer_audio_upload_button_title"),
@@ -23,7 +24,7 @@ function initializePlugin(api) {
         return this.currentUser.can_chat && this.canAttachUploads;
       },
       action() {
-        api.container.lookup("service:modal").show(AudioUpload, {
+        getOwner(this).lookup("service:modal").show(AudioUpload, {
           model: this,
         });
       },

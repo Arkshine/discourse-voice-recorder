@@ -1,5 +1,6 @@
 import {
   click,
+  fillIn,
   find,
   settled,
   visit,
@@ -81,9 +82,16 @@ acceptance("Audio Upload - Composer", function (needs) {
     server.post("/uploads.json", () => helper.response(uploadResponseFixtures));
   });
 
+  needs.hooks.afterEach(function () {
+    if (window.AudioRecorder) {
+      window.AudioRecorder.stop?.();
+    }
+  });
+
   test("recording audio", async function (assert) {
     await visit("/t/internationalization-localization/280");
-    await click("article#post_3 button.reply");
+    await click("#topic-footer-buttons .btn.create");
+    await fillIn(".d-editor-input", "this is the content of my reply");
 
     const buttonClass = ".d-editor-button-bar .composer_audio_upload";
     assert.dom(buttonClass).exists("it adds a button to the composer toolbar");
@@ -202,9 +210,9 @@ acceptance("Audio Upload - Composer", function (needs) {
     assert
       .dom(".d-editor-input")
       .hasValue(
-        `![${uploadResponseFixtures.original_filename.split(".")[0]}|audio](${
-          uploadResponseFixtures.short_url
-        })\n`,
+        `this is the content of my reply\n![${
+          uploadResponseFixtures.original_filename.split(".")[0]
+        }|audio](${uploadResponseFixtures.short_url})\n`,
         "composer upload: markdown is correct"
       );
 
@@ -243,19 +251,10 @@ acceptance("Audio Upload - Chat", function (needs) {
     );
   });
 
-  let originalResizeObserver;
-
-  // Dirty fix for "global failure: Error: ResizeObserver loop completed with undelivered notifications."
-  needs.hooks.beforeEach(function () {
-    originalResizeObserver = window.ResizeObserver;
-    window.ResizeObserver = function () {
-      this.observe = function () {};
-      this.disconnect = function () {};
-    };
-  });
-
   needs.hooks.afterEach(function () {
-    window.ResizeObserver = originalResizeObserver;
+    if (window.AudioRecorder) {
+      window.AudioRecorder.stop?.();
+    }
   });
 
   test("recording audio & upload", async function (assert) {
@@ -264,6 +263,8 @@ acceptance("Audio Upload - Chat", function (needs) {
     assert
       .dom(".chat-composer-button.-voice-recorder")
       .exists("it adds a button to the composer");
+
+    await settled();
     await click(".chat-composer-button.-voice-recorder");
 
     assert.dom(".d-modal").isVisible("it pops up a modal");

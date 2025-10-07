@@ -12,5 +12,8 @@
   "modifiers": {
     "csp_extensions": ["worker-src: blob:"],
     "svg_icons": ["microphone"]
+  },
+  "tests": {
+    "requiredPlugins": ["chat", "spoiler-alert", "discourse-local-dates"]
   }
 }

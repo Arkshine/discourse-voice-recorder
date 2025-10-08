@@ -202,7 +202,7 @@ export default class AudioUpload extends Component {
         <div class="composer-audio-upload-buttons">
           <DButton
             @action={{this.startStopRecording}}
-            @icon={{if this.isRecording "stop-circle" "circle"}}
+            @icon={{if this.isRecording "circle-stop" "circle"}}
             @translatedLabel={{i18n
               (themePrefix
                 (if

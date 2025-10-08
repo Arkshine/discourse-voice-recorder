@@ -11,7 +11,7 @@
   "component": true,
   "modifiers": {
     "csp_extensions": ["worker-src: blob:"],
-    "svg_icons": ["microphone"]
+    "svg_icons": ["microphone", "circle-stop"]
   },
   "tests": {
     "requiredPlugins": ["chat", "spoiler-alert", "discourse-local-dates"]

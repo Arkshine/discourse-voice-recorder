@@ -1,4 +1,5 @@
 import { getOwner } from "@ember/application";
+import { service } from "@ember/service";
 import { withPluginApi } from "discourse/lib/plugin-api";
 import AudioUpload from "../components/modal/audio-upload";
 
@@ -16,6 +17,24 @@ function initializePlugin(api) {
   const siteSettings = api.container.lookup("service:site-settings");
 
   if (siteSettings.chat_enabled) {
+    api.modifyClass(
+      "component:chat-composer-uploads",
+      (Superclass) =>
+        class extends Superclass {
+          @service chatUppyUpload;
+
+          didInsertElement() {
+            super.didInsertElement(...arguments);
+            this.chatUppyUpload.setInstance(this.uppyUpload);
+          }
+
+          willDestroyElement() {
+            super.willDestroyElement(...arguments);
+            this.chatUppyUpload.clear();
+          }
+        }
+    );
+
     api.registerChatComposerButton?.({
       id: "voice-recorder",
       icon: "microphone",

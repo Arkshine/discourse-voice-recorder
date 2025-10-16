@@ -10,6 +10,7 @@ import DModal from "discourse/components/d-modal";
 import loadScript from "discourse/lib/load-script";
 import { uploadIcon } from "discourse/lib/uploads";
 import { i18n } from "discourse-i18n";
+import { service } from "@ember/service";
 
 export default class AudioUpload extends Component {
   @tracked state = "loading"; // 'loading', 'idle', 'recording', 'recording_start', 'playing', 'processing'
@@ -25,6 +26,8 @@ export default class AudioUpload extends Component {
 
   @tracked _audioEl = null;
   @tracked _audioData = null;
+
+  @service chatUppyUpload;
 
   _recorder = null;
   _chunks = [];
@@ -98,7 +101,9 @@ export default class AudioUpload extends Component {
 
   onStop() {
     const blob = new Blob(this._chunks, { type: "audio/mp3" });
-    blob.name = "recording.mp3";
+    const now = new Date();
+    const formattedDate = now.toISOString().replace(/:/g, "-").split(".")[0];
+    blob.name = `recording_${formattedDate}.mp3`;
     blob.lastModifiedDate = new Date();
 
     this._chunks = [];
@@ -133,17 +138,12 @@ export default class AudioUpload extends Component {
     }
 
     if (this.chatContext) {
-      this.appEvents.trigger(`upload-mixin:chat-composer-uploader:add-files`, [
-        this._audioData,
-      ]);
+      this.chatUppyUpload.instance.addFiles([this._audioData]);
 
       if (options.send) {
         this.appEvents.one(
-          `upload-mixin:chat-composer-uploader:all-uploads-complete`,
-          async () => {
-            await this.model.args.onSendMessage(this.model.draft);
-            this.model.composer.textarea.refreshHeight();
-          }
+          `upload-mixin:${this.chatUppyUpload.instance.config.id}:all-uploads-complete`,
+          () => this.model.onSend()
         );
       }
     } else {
